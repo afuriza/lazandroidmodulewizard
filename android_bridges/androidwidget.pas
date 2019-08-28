@@ -1163,8 +1163,10 @@ end;
 
     function SetWifiEnabled(_status: boolean): boolean;
     function IsWifiEnabled(): boolean;
-    function isConnected(): boolean; // by renabor
-    function isConnectedWifi(): boolean; // by renabor
+    function IsConnected(): boolean; // by renabor
+    function IsConnectedWifi(): boolean; // by renabor
+    function IsScreenLocked(): boolean; // by TR3E
+    function IsSleepMode(): boolean; // by TR3E
 
     function GetEnvironmentDirectoryPath(_directory: TEnvDirectory): string;
     function GetInternalAppStoragePath: string;
@@ -1773,6 +1775,9 @@ procedure jForm_SetAnimationDurationIn(env: PJNIEnv; _jform: JObject; _animation
 procedure jForm_SetAnimationDurationOut(env: PJNIEnv; _jform: JObject; _animationDuration: integer);
 procedure jForm_SetAnimationMode(env: PJNIEnv; _jform: JObject; _animationMode: integer);
 
+function jForm_IsScreenLocked(env: PJNIEnv; _jform: JObject): boolean;
+function jForm_IsSleepMode(env: PJNIEnv; _jform: JObject): boolean;
+
 //------------------------------------------------------------------------------
 // View  - Generics
 //------------------------------------------------------------------------------
@@ -1873,6 +1878,7 @@ var
 
 
 implementation
+
 
 function GetPString(env: PJNIEnv; jstr: JString): string;
 var
@@ -2314,10 +2320,11 @@ begin
   //see TAndroidForm ...
 end;
 
+
 procedure TAndroidWidget.SetName(const NewName: TComponentName);
 begin
   if (csDesigning in ComponentState) then
-     if Name = FText then FText:= NewName;
+    if Name = FText then FText:= NewName;
 
   inherited SetName(NewName);
 end;
@@ -3367,6 +3374,18 @@ function jForm.isConnectedWifi(): boolean; // by renabor
 begin
   if FInitialized then
      Result:= jForm_IsConnectedWifi(FjEnv, FjObject);
+end;
+
+function jForm.IsScreenLocked(): boolean;
+begin
+   if FInitialized then
+    Result:= jForm_IsScreenLocked(FjEnv, FjObject);
+end;
+
+function jForm.IsSleepMode(): boolean;
+begin
+   if FInitialized then
+    Result:= jForm_IsSleepMode(FjEnv, FjObject);
 end;
 
 function jForm.GetEnvironmentDirectoryPath(_directory: TEnvDirectory): string;
@@ -7726,6 +7745,32 @@ var
 begin
   jCls:= env^.GetObjectClass(env, _jform);
   jMethod:= env^.GetMethodID(env, jCls, 'IsConnectedWifi', '()Z');
+  jBoo:= env^.CallBooleanMethod(env, _jform, jMethod);
+  Result:= boolean(jBoo);
+  env^.DeleteLocalRef(env, jCls);
+end;
+
+function jForm_IsScreenLocked(env: PJNIEnv; _jform: JObject): boolean;
+var
+  jBoo: JBoolean;
+  jMethod: jMethodID=nil;
+  jCls: jClass=nil;
+begin
+  jCls:= env^.GetObjectClass(env, _jform);
+  jMethod:= env^.GetMethodID(env, jCls, 'IsScreenLocked', '()Z');
+  jBoo:= env^.CallBooleanMethod(env, _jform, jMethod);
+  Result:= boolean(jBoo);
+  env^.DeleteLocalRef(env, jCls);
+end;
+
+function jForm_IsSleepMode(env: PJNIEnv; _jform: JObject): boolean;
+var
+  jBoo: JBoolean;
+  jMethod: jMethodID=nil;
+  jCls: jClass=nil;
+begin
+  jCls:= env^.GetObjectClass(env, _jform);
+  jMethod:= env^.GetMethodID(env, jCls, 'IsSleepMode', '()Z');
   jBoo:= env^.CallBooleanMethod(env, _jform, jMethod);
   Result:= boolean(jBoo);
   env^.DeleteLocalRef(env, jCls);

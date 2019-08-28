@@ -146,6 +146,9 @@ import javax.microedition.khronos.egl.EGLSurface;
 import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
 
+import android.app.KeyguardManager;
+import android.os.PowerManager;
+
 //-------------------------------------------------------------------------
 //Constants
 //-------------------------------------------------------------------------
@@ -474,6 +477,26 @@ public  void Close2() {
   controls.pOnClose(PasObj);
 }
 
+//by TR3E
+public boolean IsScreenLocked(){
+	KeyguardManager myKM = (KeyguardManager) controls.activity.getSystemService(Context.KEYGUARD_SERVICE);
+	
+	if( myKM == null ) return false;
+	
+	return myKM.inKeyguardRestrictedInputMode();	
+}
+
+//by TR3E
+public boolean IsSleepMode(){
+PowerManager powerManager = (PowerManager)controls.activity.getSystemService(Context.POWER_SERVICE);
+
+if( powerManager == null ) return false;
+
+boolean isScreenAwake = (Build.VERSION.SDK_INT < 20? powerManager.isScreenOn():powerManager.isInteractive());
+
+return !isScreenAwake;
+}
+
 public boolean IsConnected(){ //by TR3E
 
    ConnectivityManager cm =  (ConnectivityManager)controls.activity.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -531,15 +554,31 @@ public boolean IsConnectedTo(int _connectionType) { // by TR3E
 }
 
 public void ShowMessage(String msg){
-  Log.i("ShowMessage", msg);
-  Toast.makeText(controls.activity, msg, Toast.LENGTH_SHORT).show();	
-}
+	  Log.i("ShowMessage", msg);
+	  Toast toast = Toast.makeText(controls.activity, msg, Toast.LENGTH_SHORT);
+	  
+	  if( toast != null ){
+	   toast.setGravity(Gravity.BOTTOM, 0, 0);
+	   toast.show();	
+	  }
+	}
 
 public void ShowMessage(String _msg, int _gravity, int _timeLength) {
-	  Log.i("ShowMessage", _msg);
-	  Toast toast = Toast.makeText(controls.activity, _msg, _timeLength);
-	  toast.setGravity(Gravity.CENTER, 0, 0);
-	  toast.show();
+		  Log.i("ShowMessage", _msg);
+		  
+		  Toast toast = Toast.makeText(controls.activity, _msg, _timeLength);
+		  
+		  int posGravity = Gravity.BOTTOM;
+		  
+		  switch( _gravity ){
+		   case 1: posGravity = Gravity.CENTER; break;
+		   case 8: posGravity = Gravity.TOP; break;
+		  }
+		  
+		  if( toast != null){
+		   toast.setGravity(posGravity, 0, 0);
+		   toast.show();
+		  }
 }
 
 public String GetDateTime() {
