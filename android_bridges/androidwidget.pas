@@ -1144,6 +1144,7 @@ end;
     Procedure Close;
     Procedure Refresh;
     procedure ShowMessage(msg: string); overload;
+    procedure ShowMessage(ATitle: string; AMessage: string; AButtonText: string); overload;
     procedure ShowMessage(_msg: string; _gravity: TGravity; _timeLength: TShowLength); overload;
     function GetDateTime: String;
 
@@ -3092,6 +3093,12 @@ begin
   if FInitialized then
      jForm_ShowMessage(FjEnv, FjObject, msg);
 end;
+
+procedure jForm.ShowMessage(ATitle: string; AMessage: string; AButtonText: string);
+begin
+  if FInitialized then
+    jApp(Owner).ShowMessage(ATitle, AMessage, AButtonText);
+end; 
 
 procedure jForm.ShowMessage(_msg: string; _gravity: TGravity; _timeLength: TShowLength);
 begin
