@@ -1812,7 +1812,12 @@ begin
     if (Instance = AndroidForm)
     and (AndroidForm.ActivityMode in [actMain, actSplash])
     and FProjFile.IsPartOfProject then
-      LamwSmartDesigner.UpdateProjectStartModule(AndroidForm.Name);
+    begin
+      if AndroidForm.ActivityMode = actSplash then
+        LamwSmartDesigner.UpdateProjectStartModule(AndroidForm.Name)
+      else
+        LamwSmartDesigner.UpdateProjectStartModule(AndroidForm.Name);
+    end;
     if (Instance = AndroidForm) or (Instance is jVisualControl)
     and (jVisualControl(Instance).Owner = AndroidForm) then
     begin

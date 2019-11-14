@@ -43,7 +43,13 @@ public class App extends Activity {
 	   
     @Override
     public void onCreate(Bundle savedInstanceState) {
-     super.onCreate(savedInstanceState);                            
+     super.onCreate(savedInstanceState);  
+     Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread paramThread, Throwable paramThrowable) {
+                Log.e("Alert","Lets See if it Works !!!");
+            }
+        });                       
      
       //ref. http://stackoverflow.com/questions/8706464/defaulthttpclient-to-androidhttpclient 
      int systemVersion = android.os.Build.VERSION.SDK_INT; 

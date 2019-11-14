@@ -8,7 +8,7 @@ interface
 uses
   Classes, SysUtils, And_jni, And_jni_Bridge, Laz_And_Controls,
   Laz_And_Controls_Events, bluetooth, bluetoothclientsocket, AndroidWidget,
-  imagefilemanager;
+  imagefilemanager, BTPrinter.Types;
   
 type
 
@@ -254,10 +254,26 @@ end;
 
 //http://kpbird.blogspot.com.br/2011/04/android-send-image-via-bluetooth.html
 procedure TAndroidModule1.jButton5Click(Sender: TObject);
+var
+  i: integer;
+  buildstr: string;
 begin
-
+  for i:= 0 to 30 do
+  begin
+    buildstr += 'x';
+  end;
+  buildstr += ' ';
   if jBluetoothClientSocket1.IsConnected() then
-    jBluetoothClientSocket1.WriteMessage('Hi Server!', 'text/plain')
+  begin
+    jBluetoothClientSocket1.Write(TPrinterHelper.ESC_ALIGN_CENTER);
+    jBluetoothClientSocket1.WriteMessage('From Lazarus'#10, '');
+    jBluetoothClientSocket1.Write(TPrinterHelper.ESC_ALIGN_LEFT);
+
+    jBluetoothClientSocket1.WriteMessage(buildstr, '');
+    jBluetoothClientSocket1.Write(TPrinterHelper.ESC_ALIGN_Right);
+    jBluetoothClientSocket1.WriteMessage('Free Pascal'#10, '');
+    jBluetoothClientSocket1.Write(TPrinterHelper.FEED_AND_CUT);
+  end
   else
     ShowMessage('Not Connected yet...');
 
@@ -277,7 +293,9 @@ begin
    begin
      img:= jImageFileManager1.LoadFromAssets('lemures.jpg');           //or lemur1.jpg
      imgArray:= jImageFileManager1.GetByteArrayFromBitmap(img,'JPEG'); //or PNG ...
-     jBluetoothClientSocket1.Write(imgArray, 'image/jpg');
+
+     jBluetoothClientSocket1.Write(TPrinterHelper.SELECT_BIT_IMAGE_MODE);
+     //jBluetoothClientSocket1.Write(imgArray);
    end;
 end;
 
@@ -349,6 +367,7 @@ procedure TAndroidModule1.jListView1DrawItemTextColor(Sender: TObject;
   itemIndex: integer; itemCaption: string; out textColor: TARGBColorBridge);
 begin
   if itemIndex = 0 then textColor:= colbrBlue;
+
 end;
 
 end.

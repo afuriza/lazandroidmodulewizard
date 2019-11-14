@@ -1,4 +1,4 @@
-cd C:\eclipse\demos\GUI\AppCompatNavigationDrawerDemo1\bin
-C:\adt32\sdk\platform-tools\adb install -r AppCompatNavigationDrawerDemo1-debug.apk
+cd D:\AffrizaGithub\lazandroidmodulewizard\demos\GUI\AppCompatNavigationDrawerDemo1\bin
+D:\Lazarus\lamw-data\android-sdk-windows\platform-tools\adb install -r AppCompatNavigationDrawerDemo1-debug.apk
 cd ..
 pause

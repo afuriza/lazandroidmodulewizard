@@ -1,1 +1,1 @@
-/adt32/sdk/platform-tools/adb logcat
+/Lazarus/lamw-data/android-sdk-windows/platform-tools/adb logcat &

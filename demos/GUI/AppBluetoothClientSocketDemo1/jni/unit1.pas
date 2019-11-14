@@ -253,6 +253,32 @@ begin
    jBluetooth1.Disable();
 end;
 
+procedure TAndroidModule1.jListView1ClickItem(Sender: TObject; itemIndex: integer; itemCaption: string);
+var
+  deviceName, deviceAddress: string;
+begin
+
+  if itemIndex = 0 then Exit;
+
+  deviceAddress:= itemCaption; // format: name|address
+  deviceName:= SplitStr(deviceAddress, '|');
+
+  FDeviceAddress:= deviceAddress;
+  FDeviceName:= deviceName;
+
+  if Pos('null', deviceAddress) <= 0  then
+  begin
+    if jBluetooth1.IsReachablePairedDevice(deviceAddress) then
+    begin
+       jBluetoothClientSocket1.SetDevice(jBluetooth1.GetReachablePairedDeviceByAddress(deviceAddress));
+        //well known SPP UUID
+        jBluetoothClientSocket1.SetUUID('00001101-0000-1000-8000-00805F9B34FB'); //default
+        jBluetoothClientSocket1.Connect();
+    end else ShowMessage('Not ReachablePairedDevice...');
+  end;
+
+end;
+
 //http://kpbird.blogspot.com.br/2011/04/android-send-image-via-bluetooth.html
 procedure TAndroidModule1.jButton5Click(Sender: TObject);
 begin
@@ -292,31 +318,7 @@ begin
   end;
 end;
 
-procedure TAndroidModule1.jListView1ClickItem(Sender: TObject; itemIndex: integer; itemCaption: string);
-var
-  deviceName, deviceAddress: string;
-begin
 
-  if itemIndex = 0 then Exit;
-
-  deviceAddress:= itemCaption; // format: name|address
-  deviceName:= SplitStr(deviceAddress, '|');
-
-  FDeviceAddress:= deviceAddress;
-  FDeviceName:= deviceName;
-
-  if Pos('null', deviceAddress) <= 0  then
-  begin
-    if jBluetooth1.IsReachablePairedDevice(deviceAddress) then
-    begin
-       jBluetoothClientSocket1.SetDevice(jBluetooth1.GetReachablePairedDeviceByAddress(deviceAddress));
-        //well known SPP UUID
-        jBluetoothClientSocket1.SetUUID('00001101-0000-1000-8000-00805F9B34FB'); //default
-        jBluetoothClientSocket1.Connect();
-    end else ShowMessage('Not ReachablePairedDevice...');
-  end;
-
-end;
 
 procedure TAndroidModule1.jListView1DrawItemTextColor(Sender: TObject;
   itemIndex: integer; itemCaption: string; out textColor: TARGBColorBridge);

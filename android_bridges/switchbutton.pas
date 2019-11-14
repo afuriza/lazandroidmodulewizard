@@ -56,6 +56,7 @@ type
     //procedure SetShowText(_state: boolean);   //Api 21
     procedure SetSwitchState(_state: TToggleState);
     function IsChecked(): boolean;
+    function Switched: boolean;
     procedure SetLGravity(_value: TLayoutGravity);
 
   published
@@ -411,6 +412,14 @@ begin
    Result:= jSwitchButton_IsChecked(FjEnv, FjObject);
 end;
 
+function jSwitchButton.Switched: boolean;
+begin
+  if FSwitchState = tsOn then
+    Result := True
+  else
+    Result := False;
+end;
+
 procedure jSwitchButton.SetLGravity(_value: TLayoutGravity);
 begin
   //in designing component state: set value here...
@@ -641,18 +650,7 @@ begin
 end;
 
 
-procedure jSwitchButton_SetChecked(env: PJNIEnv; _jswitchbutton: JObject; _state: boolean);
-var
-  jParams: array[0..0] of jValue;
-  jMethod: jMethodID=nil;
-  jCls: jClass=nil;
-begin
-  jParams[0].z:= JBool(_state);
-  jCls:= env^.GetObjectClass(env, _jswitchbutton);
-  jMethod:= env^.GetMethodID(env, jCls, 'SetChecked', '(Z)V');
-  env^.CallVoidMethodA(env, _jswitchbutton, jMethod, @jParams);
-  env^.DeleteLocalRef(env, jCls);
-end;
+
 
 procedure jSwitchButton_DispatchOnToggleEvent(env: PJNIEnv; _jswitchbutton: JObject; _value: boolean);
 var
@@ -703,6 +701,19 @@ begin
   jParams[0].z:= JBool(_state);
   jCls:= env^.GetObjectClass(env, _jswitchbutton);
   jMethod:= env^.GetMethodID(env, jCls, 'SetShowText', '(Z)V');
+  env^.CallVoidMethodA(env, _jswitchbutton, jMethod, @jParams);
+  env^.DeleteLocalRef(env, jCls);
+end;
+
+procedure jSwitchButton_SetChecked(env: PJNIEnv; _jswitchbutton: JObject; _state: boolean);
+var
+  jParams: array[0..0] of jValue;
+  jMethod: jMethodID=nil;
+  jCls: jClass=nil;
+begin
+  jParams[0].z:= JBool(_state);
+  jCls:= env^.GetObjectClass(env, _jswitchbutton);
+  jMethod:= env^.GetMethodID(env, jCls, 'SetChecked', '(Z)V');
   env^.CallVoidMethodA(env, _jswitchbutton, jMethod, @jParams);
   env^.DeleteLocalRef(env, jCls);
 end;

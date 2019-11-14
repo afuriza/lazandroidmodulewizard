@@ -660,6 +660,7 @@ type
 
   jAsyncTask = class(jControl)
   private
+    fExceptStr: string;
     FAsyncTaskState: TAsyncTaskState;
     FRunning: boolean;
     FOnDoInBackground: TOnAsyncEventDoInBackground;
@@ -2332,10 +2333,17 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
-  if not Assigned(Form) then Exit;
-  Form.UpdateJNI(gApp);
-  if Assigned(Form.OnActivityPause) then Form.OnActivityPause(Form);
+  try
+    Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
+    if not Assigned(Form) then Exit;
+    Form.UpdateJNI(gApp);
+    if Assigned(Form.OnActivityPause) then Form.OnActivityPause(Form);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
+  end;
 end;
 
 
@@ -2355,10 +2363,18 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
-  if not Assigned(Form) then Exit;
-  Form.UpdateJNI(gApp);
-  if Assigned(Form.OnActivityResume) then Form.OnActivityResume(Form);
+  try
+    Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
+    if not Assigned(Form) then Exit;
+    Form.UpdateJNI(gApp);
+    if Assigned(Form.OnActivityResume) then Form.OnActivityResume(Form);
+
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
+  end;
 end;
 
 //The activity is about to become visible.....
@@ -2391,23 +2407,30 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  Form:= jForm(gApp.Forms.Stack[gApp.TopIndex].Form);
-  if not Assigned(Form) then Exit;
-  Form.UpdateJNI(gApp);
-  // Event : OnCloseQuery
-  if Assigned(Form.OnCloseQuery)  then
-  begin
-   // Form.ShowMessage('Back Pressed: OnCloseQuery: '+ IntTostr(gApp.TopIndex));
-    canClose := True;
-    Form.OnCloseQuery(Form, canClose);
-    if canClose = False then Exit;
+  try
+    Form:= jForm(gApp.Forms.Stack[gApp.TopIndex].Form);
+    if not Assigned(Form) then Exit;
+    Form.UpdateJNI(gApp);
+    // Event : OnCloseQuery
+    if Assigned(Form.OnCloseQuery)  then
+    begin
+     // Form.ShowMessage('Back Pressed: OnCloseQuery: '+ IntTostr(gApp.TopIndex));
+      canClose := True;
+      Form.OnCloseQuery(Form, canClose);
+      if canClose = False then Exit;
+    end;
+    if Assigned(Form.OnBackButton) then
+    begin
+      // Form.ShowMessage('Back Pressed: OnBackButton: '+ IntTostr(gApp.TopIndex));
+       Form.OnBackButton(Form);
+    end;
+    Form.Close;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
-  if Assigned(Form.OnBackButton) then
-  begin
-    // Form.ShowMessage('Back Pressed: OnBackButton: '+ IntTostr(gApp.TopIndex));
-     Form.OnBackButton(Form);
-  end;
-  Form.Close;
 end;
 
 // Event : OnRotate -> Form OnRotate
@@ -2419,30 +2442,36 @@ begin
 
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
+  try
+    Result := rotate;
 
-  Result := rotate;
+    Form := gApp.Forms.Stack[gApp.TopIndex].Form;
 
-  Form := gApp.Forms.Stack[gApp.TopIndex].Form;
+    if not Assigned(Form) then Exit;
 
-  if not Assigned(Form) then Exit;
+    Form.UpdateJNI(gApp);
 
-  Form.UpdateJNI(gApp);
+    // Update width and height when rotating
+    gApp.Screen.WH  := jSysInfo_ScreenWH(env, this, gApp.GetContext);
+    Form.ScreenWH   := gApp.Screen.WH;
 
-  // Update width and height when rotating
-  gApp.Screen.WH  := jSysInfo_ScreenWH(env, this, gApp.GetContext);
-  Form.ScreenWH   := gApp.Screen.WH;
+    if rotate = 1 then
+       rotOrientation:= ssPortrait
+    else if rotate = 2 then
+       rotOrientation:=ssLandscape
+    else if rotate = 4 then rotOrientation:= ssSensor
+        else
+          rotOrientation:=ssUnknown;
 
-  if rotate = 1 then
-     rotOrientation:= ssPortrait
-  else if rotate = 2 then
-     rotOrientation:=ssLandscape
-  else if rotate = 4 then rotOrientation:= ssSensor
-      else
-        rotOrientation:=ssUnknown;
+    Form.ScreenStyle:= rotOrientation;
 
-  Form.ScreenStyle:= rotOrientation;
-
-  if Assigned(Form.OnRotate) then Form.OnRotate(Form, rotOrientation);
+    if Assigned(Form.OnRotate) then Form.OnRotate(Form, rotOrientation);
+  except
+      on e: exception do
+      begin
+        gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+      end;
+    end;
 
 end;
 
@@ -2460,10 +2489,19 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
-  if not Assigned(Form) then Exit;
-  Form.UpdateJNI(gApp);
-  if Assigned(Form.OnActivityResult) then Form.OnActivityResult(Form,requestCode,TAndroidResult(resultCode),intentData);
+  try
+    Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
+    if not Assigned(Form) then Exit;
+    Form.UpdateJNI(gApp);
+    if Assigned(Form.OnActivityResult) then
+      Form.OnActivityResult(Form,requestCode,TAndroidResult(resultCode),
+      intentData);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
+  end;
 end;
 
 //
@@ -2473,10 +2511,18 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
-  if not Assigned(Form) then Exit;
-  Form.UpdateJNI(gApp);
-  if Assigned(Form.OnViewClick) then Form.GenEvent_OnViewClick(jObjView, id);
+  try
+    Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
+    if not Assigned(Form) then Exit;
+    Form.UpdateJNI(gApp);
+    if Assigned(Form.OnViewClick) then Form.GenEvent_OnViewClick(jObjView, id);
+
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
+  end;
 end;
 
 procedure Java_Event_pAppOnListItemClick(env: PJNIEnv; this: jobject; jObjAdapterView: jObject; jObjView: jObject; position: integer; id: integer);
@@ -2485,10 +2531,17 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
-  if not Assigned(Form) then Exit;
-  Form.UpdateJNI(gApp);
-  if Assigned(Form.OnListItemClick) then Form.GenEvent_OnListItemClick(jObjAdapterView, jObjView, position, id);
+  try
+    Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
+    if not Assigned(Form) then Exit;
+    Form.UpdateJNI(gApp);
+    if Assigned(Form.OnListItemClick) then Form.GenEvent_OnListItemClick(jObjAdapterView, jObjView, position, id);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
+  end;
 end;
 
 //by jmpessoa: support to Option Menu
@@ -2498,10 +2551,17 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
-  if not Assigned(Form) then Exit;
-  Form.UpdateJNI(gApp);
-  if Assigned(Form.OnCreateOptionMenu) then Form.OnCreateOptionMenu(Form, jObjMenu);
+  try
+    Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
+    if not Assigned(Form) then Exit;
+    Form.UpdateJNI(gApp);
+    if Assigned(Form.OnCreateOptionMenu) then Form.OnCreateOptionMenu(Form, jObjMenu);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
+  end;
 end;
 
 function Java_Event_pAppOnPrepareOptionsMenu(env: PJNIEnv; this: jobject; jObjMenu: jObject; menuSize: integer): jBoolean;
@@ -2513,16 +2573,23 @@ begin
 
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
+  try
 
-  Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
+    Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
 
-  if not Assigned(Form) then Exit;
+    if not Assigned(Form) then Exit;
 
-  Form.UpdateJNI(gApp);
+    Form.UpdateJNI(gApp);
 
-  if Assigned(Form.OnPrepareOptionsMenu) then Form.OnPrepareOptionsMenu(Form, jObjMenu, menuSize, prepareItems);
+    if Assigned(Form.OnPrepareOptionsMenu) then Form.OnPrepareOptionsMenu(Form, jObjMenu, menuSize, prepareItems);
 
-  Result:= JBool(prepareItems);
+    Result:= JBool(prepareItems);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
+  end;
 end;
 
 function Java_Event_pAppOnPrepareOptionsMenuItem(env: PJNIEnv; this: jobject; jObjMenu: jObject;  jObjMenuItem: jObject; itemIndex: integer): jBoolean;
@@ -2533,11 +2600,18 @@ begin
   prepareMoreItems:= True;
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
-  if not Assigned(Form) then Exit;
-  Form.UpdateJNI(gApp);
-  if Assigned(Form.OnPrepareOptionsMenuItem) then Form.OnPrepareOptionsMenuItem(Form, jObjMenu, jObjMenuItem, itemIndex, prepareMoreItems);
-  Result:= JBool(prepareMoreItems);
+  try
+    Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
+    if not Assigned(Form) then Exit;
+    Form.UpdateJNI(gApp);
+    if Assigned(Form.OnPrepareOptionsMenuItem) then Form.OnPrepareOptionsMenuItem(Form, jObjMenu, jObjMenuItem, itemIndex, prepareMoreItems);
+    Result:= JBool(prepareMoreItems);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
+  end;
 end;
 
 function Java_Event_pAppOnSpecialKeyDown(env: PJNIEnv; this: jobject; keyChar: JChar; keyCode: integer; keyCodeString: JString): jBoolean;
@@ -2550,20 +2624,27 @@ begin
   mute:= False;
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
+  try
+    Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
 
-  if not Assigned(Form) then Exit;
-  Form.UpdateJNI(gApp);
+    if not Assigned(Form) then Exit;
+    Form.UpdateJNI(gApp);
 
-  pasStr := '';
-  if keyCodeString <> nil then
-  begin
-      _jBoolean := JNI_False;
-      pasStr    := String( env^.GetStringUTFChars(Env,keyCodeString,@_jBoolean) );
+    pasStr := '';
+    if keyCodeString <> nil then
+    begin
+        _jBoolean := JNI_False;
+        pasStr    := String( env^.GetStringUTFChars(Env,keyCodeString,@_jBoolean) );
+    end;
+
+    if Assigned(Form.OnSpecialKeyDown) then Form.OnSpecialKeyDown(Form, char(keyChar), keyCode, pasStr, mute);
+    Result:= JBool(mute);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
-
-  if Assigned(Form.OnSpecialKeyDown) then Form.OnSpecialKeyDown(Form, char(keyChar), keyCode, pasStr, mute);
-  Result:= JBool(mute);
 
 end;
 
@@ -2584,18 +2665,25 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
-  if not Assigned(Form) then Exit;
-  Form.UpdateJNI(gApp);
+  try
+    Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
+    if not Assigned(Form) then Exit;
+    Form.UpdateJNI(gApp);
 
-  pasStr := '';
-  if itemCaption <> nil then
-  begin
-    _jBoolean := JNI_False;
-    pasStr    := String( env^.GetStringUTFChars(Env,itemCaption,@_jBoolean) );
+    pasStr := '';
+    if itemCaption <> nil then
+    begin
+      _jBoolean := JNI_False;
+      pasStr    := String( env^.GetStringUTFChars(Env,itemCaption,@_jBoolean) );
+    end;
+
+    if Assigned(Form.OnClickOptionMenuItem) then Form.OnClickOptionMenuItem(Form,jObjMenuItem,itemID,pasStr,Boolean(checked));
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
-
-  if Assigned(Form.OnClickOptionMenuItem) then Form.OnClickOptionMenuItem(Form,jObjMenuItem,itemID,pasStr,Boolean(checked));
 end;
 
 
@@ -2606,10 +2694,17 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
-  if not Assigned(Form) then Exit;
-  Form.UpdateJNI(gApp);
-  if Assigned(Form.OnCreateContextMenu) then Form.OnCreateContextMenu(Form, jObjMenu);
+  try
+    Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
+    if not Assigned(Form) then Exit;
+    Form.UpdateJNI(gApp);
+    if Assigned(Form.OnCreateContextMenu) then Form.OnCreateContextMenu(Form, jObjMenu);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
+  end;
 end;
 
 
@@ -2629,18 +2724,25 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
-  if not Assigned(Form) then Exit;
-  Form.UpdateJNI(gApp);
+  try
+    Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
+    if not Assigned(Form) then Exit;
+    Form.UpdateJNI(gApp);
 
-  pasStr := '';
-  if itemCaption <> nil then
-  begin
-    _jBoolean := JNI_False;
-    pasStr    := String( env^.GetStringUTFChars(Env,itemCaption,@_jBoolean) );
+    pasStr := '';
+    if itemCaption <> nil then
+    begin
+      _jBoolean := JNI_False;
+      pasStr    := String( env^.GetStringUTFChars(Env,itemCaption,@_jBoolean) );
+    end;
+
+    if Assigned(Form.OnClickContextMenuItem) then Form.OnClickContextMenuItem(Form,jObjMenuItem,itemID,pasStr, Boolean(checked));
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
-
-  if Assigned(Form.OnClickContextMenuItem) then Form.OnClickContextMenuItem(Form,jObjMenuItem,itemID,pasStr, Boolean(checked));
 end;
 
 Procedure Java_Event_pAppOnRequestPermissionResult(env: PJNIEnv; this: jobject;
@@ -2652,20 +2754,26 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
-  if not Assigned(Form) then Exit;
-  Form.UpdateJNI(gApp);
+  try
+    Form:= gApp.Forms.Stack[gApp.TopIndex].Form;
+    if not Assigned(Form) then Exit;
+    Form.UpdateJNI(gApp);
 
-  pasStr := '';
-  if permission <> nil then
-  begin
-    _jBoolean := JNI_False;
-    pasStr    := String( env^.GetStringUTFChars(Env,permission,@_jBoolean) );
-  end;
+    pasStr := '';
+    if permission <> nil then
+    begin
+      _jBoolean := JNI_False;
+      pasStr    := String( env^.GetStringUTFChars(Env,permission,@_jBoolean) );
+    end;
 
-  if Assigned(Form.OnRequestPermissionResult) then
+    if Assigned(Form.OnRequestPermissionResult) then
     Form.OnRequestPermissionResult(Form,requestCode,pasStr,TManifestPermissionResult(grantResult));
-
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
+  end;
 end;
 
 //------------------------------------------------------------------------------
@@ -2677,12 +2785,19 @@ Procedure Java_Event_pOnDraw(env: PJNIEnv; this: jobject;
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if not Assigned(Obj) then Exit;
-  if Obj is jView  then
-  begin
-    jView(Obj).UpdateJNI(gApp);
-    jForm(jView(Obj).Owner).UpdateJNI(gApp);
-    jView(Obj).GenEvent_OnDraw(Obj);
+  try
+    if not Assigned(Obj) then Exit;
+    if Obj is jView  then
+    begin
+      jView(Obj).UpdateJNI(gApp);
+      jForm(jView(Obj).Owner).UpdateJNI(gApp);
+      jView(Obj).GenEvent_OnDraw(Obj);
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -2692,14 +2807,19 @@ begin
   //----update global "gApp": to whom it may concern------
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-
-  if Obj is jPanel then
-  begin
-    jForm(jPanel(Obj).Owner).UpdateJNI(gApp);
-    jPanel(Obj).GenEvent_OnDown(Obj);
-    exit;
+  try
+    if Obj is jPanel then
+    begin
+      jForm(jPanel(Obj).Owner).UpdateJNI(gApp);
+      jPanel(Obj).GenEvent_OnDown(Obj);
+      exit;
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
-
 end;
 
 procedure Java_Event_pOnDoubleClick(env: PJNIEnv; this: jobject; Obj: TObject; Value: integer);
@@ -2708,14 +2828,19 @@ begin
   //----update global "gApp": to whom it may concern------
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-
-  if Obj is jPanel then
-  begin
-    jForm(jPanel(Obj).Owner).UpdateJNI(gApp);
-    jPanel(Obj).GenEvent_OnDoubleClick(Obj);
-    exit;
+  try
+    if Obj is jPanel then
+    begin
+      jForm(jPanel(Obj).Owner).UpdateJNI(gApp);
+      jPanel(Obj).GenEvent_OnDoubleClick(Obj);
+      exit;
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
-
 end;
 
 Procedure Java_Event_pOnClick(env: PJNIEnv; this: jobject; Obj: TObject; Value: integer);
@@ -2725,66 +2850,73 @@ begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
   //------------------------------------------------------
+  try
+    if not (Assigned(Obj)) then Exit;
+    if Obj is jForm then
+    begin
+      jForm(Obj).UpdateJNI(gApp);
+      jForm(Obj).GenEvent_OnClick(Obj);
+      Exit;
+    end;
+    if Obj is jTextView then
+    begin
+      jForm(jTextView(Obj).Owner).UpdateJNI(gApp);
+      jTextView(Obj).GenEvent_OnClick(Obj);
+      Exit;
+    end;
+    if Obj is jEditText then
+    begin
+      jForm(jEditText(Obj).Owner).UpdateJNI(gApp);
+      jEditText(Obj).GenEvent_OnClick(Obj);
+      Exit;
+    end;
+    if Obj is jButton then
+    begin
+      jForm(jButton(Obj).Owner).UpdateJNI(gApp);
+      jButton(Obj).GenEvent_OnClick(Obj);
+      Exit;
+    end;
+    if Obj is jCheckBox then
+    begin
+      jForm(jCheckBox(Obj).Owner).UpdateJNI(gApp);
+      jCheckBox(Obj).GenEvent_OnClick(Obj);
+      Exit;
+    end;
+    if Obj is jRadioButton then
+    begin
+      jForm(jRadioButton(Obj).Owner).UpdateJNI(gApp);
+      jRadioButton(Obj).GenEvent_OnClick(Obj);
+      Exit;
+    end;
+    if Obj is jDialogYN then
+    begin
+      jDialogYN(Obj).GenEvent_OnClick(Obj,Value);
+      Exit;
+    end;
+    if Obj is jImageBtn then
+    begin
+      jForm(jImageBtn(Obj).Owner).UpdateJNI(gApp);
+      jImageBtn(Obj).GenEvent_OnClick(Obj);
+      Exit;
+    end;
+    if Obj is jImageView then
+    begin
+      jForm(jImageView(Obj).Owner).UpdateJNI(gApp);
+      jImageView(Obj).GenEvent_OnClick(Obj);
+      Exit;
+    end;
+    if Obj is jPanel then
+    begin
+      jForm(jPanel(Obj).Owner).UpdateJNI(gApp);
+      jPanel(Obj).GenEvent_OnClick(Obj);
+      Exit;
+    end;
 
-  if not (Assigned(Obj)) then Exit;
-  if Obj is jForm then
-  begin
-    jForm(Obj).UpdateJNI(gApp);
-    jForm(Obj).GenEvent_OnClick(Obj);
-    Exit;
-  end;
-  if Obj is jTextView then
-  begin
-    jForm(jTextView(Obj).Owner).UpdateJNI(gApp);
-    jTextView(Obj).GenEvent_OnClick(Obj);
-    Exit;
-  end;
-  if Obj is jEditText then
-  begin
-    jForm(jEditText(Obj).Owner).UpdateJNI(gApp);
-    jEditText(Obj).GenEvent_OnClick(Obj);
-    Exit;
-  end;
-  if Obj is jButton then
-  begin
-    jForm(jButton(Obj).Owner).UpdateJNI(gApp);
-    jButton(Obj).GenEvent_OnClick(Obj);
-    Exit;
-  end;
-  if Obj is jCheckBox then
-  begin
-    jForm(jCheckBox(Obj).Owner).UpdateJNI(gApp);
-    jCheckBox(Obj).GenEvent_OnClick(Obj);
-    Exit;
-  end;
-  if Obj is jRadioButton then
-  begin
-    jForm(jRadioButton(Obj).Owner).UpdateJNI(gApp);
-    jRadioButton(Obj).GenEvent_OnClick(Obj);
-    Exit;
-  end;
-  if Obj is jDialogYN then
-  begin
-    jDialogYN(Obj).GenEvent_OnClick(Obj,Value);
-    Exit;
-  end;
-  if Obj is jImageBtn then
-  begin
-    jForm(jImageBtn(Obj).Owner).UpdateJNI(gApp);
-    jImageBtn(Obj).GenEvent_OnClick(Obj);
-    Exit;
-  end;
-  if Obj is jImageView then
-  begin
-    jForm(jImageView(Obj).Owner).UpdateJNI(gApp);
-    jImageView(Obj).GenEvent_OnClick(Obj);
-    Exit;
-  end;
-  if Obj is jPanel then
-  begin
-    jForm(jPanel(Obj).Owner).UpdateJNI(gApp);
-    jPanel(Obj).GenEvent_OnClick(Obj);
-    Exit;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -2795,28 +2927,34 @@ begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
   //------------------------------------------------------
+  try
+    if not (Assigned(Obj)) then Exit;
 
-  if not (Assigned(Obj)) then Exit;
+    if Obj is jWebView then  //need fix here ... handling long clicked!
+    begin
+      jForm(jWebView(Obj).Owner).UpdateJNI(gApp);
+      jWebView(Obj).GenEvent_OnLongClick(Obj);
+      Exit;
+    end;
 
-  if Obj is jWebView then  //need fix here ... handling long clicked!
-  begin
-    jForm(jWebView(Obj).Owner).UpdateJNI(gApp);
-    jWebView(Obj).GenEvent_OnLongClick(Obj);
-    Exit;
-  end;
+    if Obj is jTextView then
+    begin
+      jForm(jTextView(Obj).Owner).UpdateJNI(gApp);
+      jTextView(Obj).GenEvent_OnLongClick(Obj);
+      Exit;
+    end;
 
-  if Obj is jTextView then
-  begin
-    jForm(jTextView(Obj).Owner).UpdateJNI(gApp);
-    jTextView(Obj).GenEvent_OnLongClick(Obj);
-    Exit;
-  end;
-
-  if Obj is jPanel then
-  begin
-    jForm(jPanel(Obj).Owner).UpdateJNI(gApp);
-    jPanel(Obj).GenEvent_OnLongClick(Obj);
-    Exit;
+    if Obj is jPanel then
+    begin
+      jForm(jPanel(Obj).Owner).UpdateJNI(gApp);
+      jPanel(Obj).GenEvent_OnLongClick(Obj);
+      Exit;
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 
 end;
@@ -2830,10 +2968,17 @@ Procedure Java_Event_pOnClickWidgetItem(env: PJNIEnv; this: jobject; Obj: TObjec
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if Obj is jListView then
-  begin
-    jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
-    jListVIew(Obj).GenEvent_OnClickWidgetItem(Obj, index, Boolean(checked)); Exit;
+  try
+    if Obj is jListView then
+    begin
+      jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
+      jListVIew(Obj).GenEvent_OnClickWidgetItem(Obj, index, Boolean(checked)); Exit;
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -2842,10 +2987,18 @@ procedure Java_Event_pOnClickImageItem(env: PJNIEnv; this: jobject; Obj: TObject
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if Obj is jListView then
-  begin
-    jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
-    jListVIew(Obj).GenEvent_OnClickImageItem(Obj, index); Exit;
+  try
+    if Obj is jListView then
+    begin
+      jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
+      jListVIew(Obj).GenEvent_OnClickImageItem(Obj, index); Exit;
+    end;
+
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -2853,34 +3006,42 @@ procedure Java_Event_pOnBeforeDispatchDraw(env: PJNIEnv; this: jobject; Obj: TOb
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if Obj is jListView then
-  begin
-    jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
-    jListVIew(Obj).GenEvent_OnBeforeDispatchDraw(Obj, canvas, tag);
-    Exit;
-  end;
-  if Obj is jTextView then
-  begin
-    jForm(jTextView(Obj).Owner).UpdateJNI(gApp);
-    jTextView(Obj).GenEvent_OnBeforeDispatchDraw(Obj, canvas, tag);
-    Exit;
-  end;
-  if Obj is jEditText then
-  begin
-    jForm(jEditText(Obj).Owner).UpdateJNI(gApp);
-    jEditText(Obj).GenEvent_OnBeforeDispatchDraw(Obj, canvas, tag);
-    Exit;
-  end;
-  if Obj is jButton then
-  begin
-    jForm(jButton(Obj).Owner).UpdateJNI(gApp);
-    jButton(Obj).GenEvent_OnBeforeDispatchDraw(Obj, canvas, tag);
-    Exit;
-  end;
-  if Obj is jAutoTextView then
-  begin
-    jForm(jAutoTextView(Obj).Owner).UpdateJNI(gApp);
-    jAutoTextView(Obj).GenEvent_OnBeforeDispatchDraw(Obj, canvas, tag);
+  try
+    if Obj is jListView then
+    begin
+      jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
+      jListVIew(Obj).GenEvent_OnBeforeDispatchDraw(Obj, canvas, tag);
+      Exit;
+    end;
+    if Obj is jTextView then
+    begin
+      jForm(jTextView(Obj).Owner).UpdateJNI(gApp);
+      jTextView(Obj).GenEvent_OnBeforeDispatchDraw(Obj, canvas, tag);
+      Exit;
+    end;
+    if Obj is jEditText then
+    begin
+      jForm(jEditText(Obj).Owner).UpdateJNI(gApp);
+      jEditText(Obj).GenEvent_OnBeforeDispatchDraw(Obj, canvas, tag);
+      Exit;
+    end;
+    if Obj is jButton then
+    begin
+      jForm(jButton(Obj).Owner).UpdateJNI(gApp);
+      jButton(Obj).GenEvent_OnBeforeDispatchDraw(Obj, canvas, tag);
+      Exit;
+    end;
+    if Obj is jAutoTextView then
+    begin
+      jForm(jAutoTextView(Obj).Owner).UpdateJNI(gApp);
+      jAutoTextView(Obj).GenEvent_OnBeforeDispatchDraw(Obj, canvas, tag);
+    end;
+
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -2888,34 +3049,42 @@ procedure Java_Event_pOnAfterDispatchDraw(env: PJNIEnv; this: jobject; Obj: TObj
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if Obj is jListView then
-  begin
-    jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
-    jListVIew(Obj).GenEvent_OnAfterDispatchDraw(Obj, canvas, tag);
-    Exit;
-  end;
-  if Obj is jTextView then
-  begin
-    jForm(jTextView(Obj).Owner).UpdateJNI(gApp);
-    jTextView(Obj).GenEvent_OnAfterDispatchDraw(Obj, canvas, tag);
-    Exit;
-  end;
-  if Obj is jEditText then
-  begin
-    jForm(jEditText(Obj).Owner).UpdateJNI(gApp);
-    jEditText(Obj).GenEvent_OnAfterDispatchDraw(Obj, canvas, tag);
-    Exit;
-  end;
-  if Obj is jButton then
-  begin
-    jForm(jButton(Obj).Owner).UpdateJNI(gApp);
-    jButton(Obj).GenEvent_OnAfterDispatchDraw(Obj, canvas, tag);
-    Exit;
-  end;
-  if Obj is jAutoTextView then
-  begin
-    jForm(jAutoTextView(Obj).Owner).UpdateJNI(gApp);
-    jAutoTextView(Obj).GenEvent_OnBeforeDispatchDraw(Obj, canvas, tag);
+  try
+    if Obj is jListView then
+    begin
+      jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
+      jListVIew(Obj).GenEvent_OnAfterDispatchDraw(Obj, canvas, tag);
+      Exit;
+    end;
+    if Obj is jTextView then
+    begin
+      jForm(jTextView(Obj).Owner).UpdateJNI(gApp);
+      jTextView(Obj).GenEvent_OnAfterDispatchDraw(Obj, canvas, tag);
+      Exit;
+    end;
+    if Obj is jEditText then
+    begin
+      jForm(jEditText(Obj).Owner).UpdateJNI(gApp);
+      jEditText(Obj).GenEvent_OnAfterDispatchDraw(Obj, canvas, tag);
+      Exit;
+    end;
+    if Obj is jButton then
+    begin
+      jForm(jButton(Obj).Owner).UpdateJNI(gApp);
+      jButton(Obj).GenEvent_OnAfterDispatchDraw(Obj, canvas, tag);
+      Exit;
+    end;
+    if Obj is jAutoTextView then
+    begin
+      jForm(jAutoTextView(Obj).Owner).UpdateJNI(gApp);
+      jAutoTextView(Obj).GenEvent_OnBeforeDispatchDraw(Obj, canvas, tag);
+    end;
+
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -2923,17 +3092,25 @@ procedure Java_Event_pOnLayouting(env: PJNIEnv; this: jobject; Obj: TObject; cha
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if Obj is jTextView then
-  begin
-    jForm(jTextView(Obj).Owner).UpdateJNI(gApp);
-    jTextView(Obj).GenEvent_OnOnLayouting(Obj, Boolean(changed));
-    Exit;
-  end;
-  if Obj is jEditText then
-  begin
-    jForm(jEditText(Obj).Owner).UpdateJNI(gApp);
-    jEditText(Obj).GenEvent_OnOnLayouting(Obj, Boolean(changed));
-    Exit;
+  try
+    if Obj is jTextView then
+    begin
+      jForm(jTextView(Obj).Owner).UpdateJNI(gApp);
+      jTextView(Obj).GenEvent_OnOnLayouting(Obj, Boolean(changed));
+      Exit;
+    end;
+    if Obj is jEditText then
+    begin
+      jForm(jEditText(Obj).Owner).UpdateJNI(gApp);
+      jEditText(Obj).GenEvent_OnOnLayouting(Obj, Boolean(changed));
+      Exit;
+    end;
+
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -2944,17 +3121,25 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
+  try
 
-  if Obj is jListVIew then
-  begin
-    jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
-    pasCaption := '';
-    if caption <> nil then
+    if Obj is jListVIew then
     begin
-      _jBoolean:= JNI_False;
-      pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
+      pasCaption := '';
+      if caption <> nil then
+      begin
+        _jBoolean:= JNI_False;
+        pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      end;
+      jListVIew(Obj).GenEvent_OnClickCaptionItem(Obj, index, pasCaption);
     end;
-    jListVIew(Obj).GenEvent_OnClickCaptionItem(Obj, index, pasCaption);
+
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -2966,17 +3151,23 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-
-  if Obj is jListVIew then
-  begin
-    jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
-    pasCaption := '';
-    if caption <> nil then
+  try
+    if Obj is jListVIew then
     begin
-      _jBoolean:= JNI_False;
-      pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
+      pasCaption := '';
+      if caption <> nil then
+      begin
+        _jBoolean:= JNI_False;
+        pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      end;
+      jListVIew(Obj).GenEvent_OnClickTextLeft(Obj, index, pasCaption);
     end;
-    jListVIew(Obj).GenEvent_OnClickTextLeft(Obj, index, pasCaption);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -2988,17 +3179,23 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-
-  if Obj is jListVIew then
-  begin
-    jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
-    pasCaption := '';
-    if caption <> nil then
+  try
+    if Obj is jListVIew then
     begin
-      _jBoolean:= JNI_False;
-      pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
+      pasCaption := '';
+      if caption <> nil then
+      begin
+        _jBoolean:= JNI_False;
+        pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      end;
+      jListVIew(Obj).GenEvent_OnClickTextCenter(Obj, index, pasCaption);
     end;
-    jListVIew(Obj).GenEvent_OnClickTextCenter(Obj, index, pasCaption);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -3010,17 +3207,23 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-
-  if Obj is jListVIew then
-  begin
-    jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
-    pasCaption := '';
-    if caption <> nil then
+  try
+    if Obj is jListVIew then
     begin
-      _jBoolean:= JNI_False;
-      pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
+      pasCaption := '';
+      if caption <> nil then
+      begin
+        _jBoolean:= JNI_False;
+        pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      end;
+      jListVIew(Obj).GenEvent_OnClickTextRight(Obj, index, pasCaption);
     end;
-    jListVIew(Obj).GenEvent_OnClickTextRight(Obj, index, pasCaption);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -3032,17 +3235,23 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-
-  if Obj is jListVIew then
-  begin
-    jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
-    pasCaption := '';
-    if caption <> nil then
+  try
+    if Obj is jListVIew then
     begin
-      _jBoolean:= JNI_False;
-      pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
+      pasCaption := '';
+      if caption <> nil then
+      begin
+        _jBoolean:= JNI_False;
+        pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      end;
+      jListVIew(Obj).GenEvent_OnWidgeItemLostFocus(Obj, index, pasCaption);
     end;
-    jListVIew(Obj).GenEvent_OnWidgeItemLostFocus(Obj, index, pasCaption);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -3054,19 +3263,26 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  outColor:= 0;
-  if Obj is jListVIew then
-  begin
-    jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
-    pasCaption := '';
-    if caption <> nil then
+  try
+    outColor:= 0;
+    if Obj is jListVIew then
     begin
-      _jBoolean:= JNI_False;
-      pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
+      pasCaption := '';
+      if caption <> nil then
+      begin
+        _jBoolean:= JNI_False;
+        pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      end;
+      jListVIew(Obj).GenEvent_OnDrawItemCaptionColor(Obj, index, pasCaption, outColor);
     end;
-    jListVIew(Obj).GenEvent_OnDrawItemCaptionColor(Obj, index, pasCaption, outColor);
+    Result:= JInt(outColor);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
-  Result:= JInt(outColor);
 end;
 
 function Java_Event_pOnListViewDrawItemWidgetTextColor(env: PJNIEnv; this: jobject; Obj: TObject; index: integer; caption: JString): JInt;
@@ -3078,18 +3294,25 @@ begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
   outColor:= 0;
-  if Obj is jListVIew then
-  begin
-    jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
-    pasCaption := '';
-    if caption <> nil then
+  try
+    if Obj is jListVIew then
     begin
-      _jBoolean:= JNI_False;
-      pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
+      pasCaption := '';
+      if caption <> nil then
+      begin
+        _jBoolean:= JNI_False;
+        pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      end;
+      jListVIew(Obj).GenEvent_OnDrawItemWidgetTextColor(Obj, index, pasCaption, outColor);
     end;
-    jListVIew(Obj).GenEvent_OnDrawItemWidgetTextColor(Obj, index, pasCaption, outColor);
+    Result:= JInt(outColor);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
-  Result:= JInt(outColor);
 end;
 
 function Java_Event_pOnListViewDrawItemWidgetText(env: PJNIEnv; this: jobject; Obj: TObject; index: integer; caption: JString): JString;
@@ -3100,19 +3323,26 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  outText:= '';
-  if Obj is jListVIew then
-  begin
-    jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
-    pasCaption := '';
-    if caption <> nil then
+  try
+    outText:= '';
+    if Obj is jListVIew then
     begin
-      _jBoolean:= JNI_False;
-      pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
+      pasCaption := '';
+      if caption <> nil then
+      begin
+        _jBoolean:= JNI_False;
+        pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      end;
+      jListVIew(Obj).GenEvent_OnDrawItemWidgetText(Obj, index, pasCaption, outText);
     end;
-    jListVIew(Obj).GenEvent_OnDrawItemWidgetText(Obj, index, pasCaption, outText);
+    Result:= Get_jString(outText);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
-  Result:= Get_jString(outText);
 end;
 
 //by tr3e
@@ -3123,14 +3353,21 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  outColor:= 0;
-  if Obj is jListVIew then
-  begin
-    jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
+  try
+    outColor:= 0;
+    if Obj is jListVIew then
+    begin
+      jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
 
-    jListVIew(Obj).GenEvent_OnDrawItemBackgroundColor(Obj, index, outColor);
+      jListVIew(Obj).GenEvent_OnDrawItemBackgroundColor(Obj, index, outColor);
+    end;
+    Result:= outColor;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
-  Result:= outColor;
 end;
 
 function Java_Event_pOnListViewDrawItemBitmap(env: PJNIEnv; this: jobject; Obj: TObject; index: integer; caption: JString): JObject;
@@ -3141,17 +3378,24 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  outBitmap:= nil;
-  if Obj is jListVIew then
-  begin
-    jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
-    pasCaption := '';
-    if caption <> nil then
+  try
+    outBitmap:= nil;
+    if Obj is jListVIew then
     begin
-      _jBoolean:= JNI_False;
-      pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
+      pasCaption := '';
+      if caption <> nil then
+      begin
+        _jBoolean:= JNI_False;
+        pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      end;
+      jListVIew(Obj).GenEvent_OnDrawItemBitmap(Obj, index, pasCaption, outBitmap);
     end;
-    jListVIew(Obj).GenEvent_OnDrawItemBitmap(Obj, index, pasCaption, outBitmap);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
   Result:= outBitmap;
 end;
@@ -3164,17 +3408,24 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  outBitmap:= nil;
-  if Obj is jListVIew then
-  begin
-    jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
-    pasCaption := '';
-    if caption <> nil then
+  try
+    outBitmap:= nil;
+    if Obj is jListVIew then
     begin
-      _jBoolean:= JNI_False;
-      pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
+      pasCaption := '';
+      if caption <> nil then
+      begin
+        _jBoolean:= JNI_False;
+        pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      end;
+      jListVIew(Obj).GenEvent_OnDrawItemWidgetBitmap(Obj, index, pasCaption, outBitmap);
     end;
-    jListVIew(Obj).GenEvent_OnDrawItemWidgetBitmap(Obj, index, pasCaption, outBitmap);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
   Result:= outBitmap;
 end;
@@ -3183,10 +3434,17 @@ procedure Java_Event_pOnListViewScrollStateChanged(env: PJNIEnv; this: jobject; 
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if Obj is jListVIew then
-  begin
-    jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
-    jListVIew(Obj).GenEvent_OnScrollStateChanged(Obj, firstVisibleItem, visibleItemCount, totalItemCount, Boolean(lastItemReached) );
+  try
+    if Obj is jListVIew then
+    begin
+      jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
+      jListVIew(Obj).GenEvent_OnScrollStateChanged(Obj, firstVisibleItem, visibleItemCount, totalItemCount, Boolean(lastItemReached) );
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -3197,17 +3455,23 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-
-  if Obj is jListVIew then
-  begin
-    jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
-    pasCaption := '';
-    if caption <> nil then
+  try
+    if Obj is jListVIew then
     begin
-      _jBoolean:= JNI_False;
-      pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      jForm(jListVIew(Obj).Owner).UpdateJNI(gApp);
+      pasCaption := '';
+      if caption <> nil then
+      begin
+        _jBoolean:= JNI_False;
+        pasCaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      end;
+      jListVIew(Obj).GenEvent_OnLongClickCaptionItem(Obj, index, pasCaption);
     end;
-    jListVIew(Obj).GenEvent_OnLongClickCaptionItem(Obj, index, pasCaption);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -3218,17 +3482,24 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if not Assigned(Obj) then Exit;
-  pasTxt:='';
-  if txt <> nil then
-  begin
-  _jBoolean := JNI_False;
-    pasTxt:= string( env^.GetStringUTFChars(Env,txt,@_jBoolean) );
-  end;
-  if Obj is jEditText then
-  begin
-     jForm(jEditText(Obj).Owner).UpdateJNI(gApp);
-     jEditText(Obj).GenEvent_OnChange(Obj, pasTxt, count);
+  try
+    if not Assigned(Obj) then Exit;
+    pasTxt:='';
+    if txt <> nil then
+    begin
+    _jBoolean := JNI_False;
+      pasTxt:= string( env^.GetStringUTFChars(Env,txt,@_jBoolean) );
+    end;
+    if Obj is jEditText then
+    begin
+       jForm(jEditText(Obj).Owner).UpdateJNI(gApp);
+       jEditText(Obj).GenEvent_OnChange(Obj, pasTxt, count);
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -3239,18 +3510,25 @@ var
 begin
  gApp.Jni.jEnv:= env;
  gApp.Jni.jThis:= this;
- if not Assigned(Obj) then Exit;
- pasTxt:='';
- if txt <> nil then
- begin
- _jBoolean := JNI_False;
-   pasTxt:= string( env^.GetStringUTFChars(Env,txt,@_jBoolean) );
- end;
- if Obj is jEditText then
- begin
-    jForm(jEditText(Obj).Owner).UpdateJNI(gApp);
-    jEditText(Obj).GenEvent_OnChanged(Obj, pasTxt, count);
- end;
+ try
+   if not Assigned(Obj) then Exit;
+   pasTxt:='';
+   if txt <> nil then
+   begin
+   _jBoolean := JNI_False;
+     pasTxt:= string( env^.GetStringUTFChars(Env,txt,@_jBoolean) );
+   end;
+   if Obj is jEditText then
+   begin
+      jForm(jEditText(Obj).Owner).UpdateJNI(gApp);
+      jEditText(Obj).GenEvent_OnChanged(Obj, pasTxt, count);
+   end;
+ except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
+  end;
 end;
 
 // LORDMAN
@@ -3258,30 +3536,35 @@ Procedure Java_Event_pOnEnter(env: PJNIEnv; this: jobject; Obj: TObject);
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
+  try
+    if not Assigned(Obj) then Exit;
 
-  if not Assigned(Obj) then Exit;
+    if Obj is jEditText then
+    begin
+      jForm(jEditText(Obj).Owner).UpdateJNI(gApp);
+      jEditText(Obj).GenEvent_OnEnter(Obj);
+      Exit;
+    end;
 
-  if Obj is jEditText then
-  begin
-    jForm(jEditText(Obj).Owner).UpdateJNI(gApp);
-    jEditText(Obj).GenEvent_OnEnter(Obj);
-    Exit;
+    if Obj is jComboEditText then
+    begin
+      jForm(jComboEditText(Obj).Owner).UpdateJNI(gApp);
+      jComboEditText(Obj).GenEvent_OnEnter(Obj);
+      Exit;
+    end;
+
+    if Obj is jAutoTextView then
+    begin
+      jForm(jAutoTextView(Obj).Owner).UpdateJNI(gApp);
+      jAutoTextView(Obj).GenEvent_OnEnter(Obj);
+      Exit;
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
-
-  if Obj is jComboEditText then
-  begin
-    jForm(jComboEditText(Obj).Owner).UpdateJNI(gApp);
-    jComboEditText(Obj).GenEvent_OnEnter(Obj);
-    Exit;
-  end;
-
-  if Obj is jAutoTextView then
-  begin
-    jForm(jAutoTextView(Obj).Owner).UpdateJNI(gApp);
-    jAutoTextView(Obj).GenEvent_OnEnter(Obj);
-    Exit;
-  end;
-
 end;
 
 // by tr3e
@@ -3289,30 +3572,35 @@ Procedure Java_Event_pOnBackPressed(env: PJNIEnv; this: jobject; Obj: TObject);
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
+  try
+    if not Assigned(Obj) then Exit;
 
-  if not Assigned(Obj) then Exit;
+    if Obj is jEditText then
+    begin
+      jForm(jEditText(Obj).Owner).UpdateJNI(gApp);
+      jEditText(Obj).GenEvent_OnBackPressed(Obj);
+      Exit;
+    end;
 
-  if Obj is jEditText then
-  begin
-    jForm(jEditText(Obj).Owner).UpdateJNI(gApp);
-    jEditText(Obj).GenEvent_OnBackPressed(Obj);
-    Exit;
+    (*if Obj is jComboEditText then
+    begin
+      jForm(jComboEditText(Obj).Owner).UpdateJNI(gApp);
+      jComboEditText(Obj).GenEvent_OnEnter(Obj);
+      Exit;
+    end;
+
+    if Obj is jAutoTextView then
+    begin
+      jForm(jAutoTextView(Obj).Owner).UpdateJNI(gApp);
+      jAutoTextView(Obj).GenEvent_OnEnter(Obj);
+      Exit;
+    end; *)
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
-
-  (*if Obj is jComboEditText then
-  begin
-    jForm(jComboEditText(Obj).Owner).UpdateJNI(gApp);
-    jComboEditText(Obj).GenEvent_OnEnter(Obj);
-    Exit;
-  end;
-
-  if Obj is jAutoTextView then
-  begin
-    jForm(jAutoTextView(Obj).Owner).UpdateJNI(gApp);
-    jAutoTextView(Obj).GenEvent_OnEnter(Obj);
-    Exit;
-  end; *)
-
 end;
 
 Procedure Java_Event_pOnTimer(env: PJNIEnv; this: jobject; Obj: TObject);
@@ -3321,22 +3609,27 @@ Var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
+  try
+    if App_IsLock then Exit;
 
-  if App_IsLock then Exit;
+    if not (Assigned(Obj)) then Exit;
+    if not (Obj is jTimer) then Exit;
 
-  if not (Assigned(Obj)) then Exit;
-  if not (Obj is jTimer) then Exit;
+    Timer := jTimer(Obj);
 
-  Timer := jTimer(Obj);
+    if not (Timer.Enabled) then Exit;
 
-  if not (Timer.Enabled) then Exit;
+    Timer.jParent.UpdateJNI(gApp);
 
-  Timer.jParent.UpdateJNI(gApp);
+    if Timer.jParent.FormState = fsFormClose then Exit;
 
-  if Timer.jParent.FormState = fsFormClose then Exit;
-
-  if Assigned(Timer.OnTimer) then Timer.OnTimer(Timer);
-
+    if Assigned(Timer.OnTimer) then Timer.OnTimer(Timer);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
+  end;
 end;
 
 procedure Java_Event_pOnTouch(env: PJNIEnv; this: jobject;
@@ -3345,24 +3638,31 @@ procedure Java_Event_pOnTouch(env: PJNIEnv; this: jobject;
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if not Assigned(Obj)  then Exit;
-  if Obj is jGLViewEvent  then
-  begin
-    jForm(jGLViewEvent(Obj).Owner).UpdateJNI(gApp);
-    jGLViewEvent(Obj).GenEvent_OnTouch(Obj,act,cnt,x1,y1,x2,y2);
-    Exit;
-  end;
-  if Obj is jView then
-  begin
-    jForm(jView(Obj).Owner).UpdateJNI(gApp);
-    jView(Obj).GenEvent_OnTouch(Obj,act,cnt,x1,y1,x2,y2);
-    Exit;
-  end;
-  if Obj is jImageView then
-  begin
-    jForm(jImageView(Obj).Owner).UpdateJNI(gApp);
-    jImageView(Obj).GenEvent_OnTouch(Obj,act,cnt,x1,y1,x2,y2);
-    Exit;
+  try
+    if not Assigned(Obj)  then Exit;
+    if Obj is jGLViewEvent  then
+    begin
+      jForm(jGLViewEvent(Obj).Owner).UpdateJNI(gApp);
+      jGLViewEvent(Obj).GenEvent_OnTouch(Obj,act,cnt,x1,y1,x2,y2);
+      Exit;
+    end;
+    if Obj is jView then
+    begin
+      jForm(jView(Obj).Owner).UpdateJNI(gApp);
+      jView(Obj).GenEvent_OnTouch(Obj,act,cnt,x1,y1,x2,y2);
+      Exit;
+    end;
+    if Obj is jImageView then
+    begin
+      jForm(jImageView(Obj).Owner).UpdateJNI(gApp);
+      jImageView(Obj).GenEvent_OnTouch(Obj,act,cnt,x1,y1,x2,y2);
+      Exit;
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -3370,11 +3670,18 @@ procedure Java_Event_pOnGLRenderer(env: PJNIEnv; this: jobject; Obj: TObject; Ev
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if not Assigned(Obj) then Exit;
-  if Obj is jGLViewEvent  then
-  begin
-    jForm(jGLViewEvent(Obj).Owner).UpdateJNI(gApp);
-    jGLViewEvent(Obj).GenEvent_OnRender(Obj, EventType, w, h);
+  try
+    if not Assigned(Obj) then Exit;
+    if Obj is jGLViewEvent  then
+    begin
+      jForm(jGLViewEvent(Obj).Owner).UpdateJNI(gApp);
+      jGLViewEvent(Obj).GenEvent_OnRender(Obj, EventType, w, h);
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -3382,11 +3689,18 @@ procedure Java_Event_pOnGLRenderer1(env: PJNIEnv; this: jobject; Obj: TObject; E
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if not Assigned(Obj) then Exit;
-  if Obj is jGLViewEvent  then
-  begin
-    jForm(jGLViewEvent(Obj).Owner).UpdateJNI(gApp);
-    jGLViewEvent(Obj).GenEvent_OnRender(Obj, EventType, w, h);
+  try
+    if not Assigned(Obj) then Exit;
+    if Obj is jGLViewEvent  then
+    begin
+      jForm(jGLViewEvent(Obj).Owner).UpdateJNI(gApp);
+      jGLViewEvent(Obj).GenEvent_OnRender(Obj, EventType, w, h);
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -3394,11 +3708,18 @@ procedure Java_Event_pOnGLRenderer2(env: PJNIEnv; this: jobject; Obj: TObject; E
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if not Assigned(Obj) then Exit;
-  if Obj is jGLViewEvent  then
-  begin
-    jForm(jGLViewEvent(Obj).Owner).UpdateJNI(gApp);
-    jGLViewEvent(Obj).GenEvent_OnRender(Obj, EventType, w, h);
+  try
+    if not Assigned(Obj) then Exit;
+    if Obj is jGLViewEvent  then
+    begin
+      jForm(jGLViewEvent(Obj).Owner).UpdateJNI(gApp);
+      jGLViewEvent(Obj).GenEvent_OnRender(Obj, EventType, w, h);
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -3415,23 +3736,28 @@ begin
 
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-
-  Result     := cjWebView_Act_Continue;
-  pasWebView := jWebView(webview);
-  if not Assigned(pasWebView) then Exit;
-  if not Assigned(pasWebView.OnStatus) then Exit;
-  //
-  pasURL := '';
-  if URL <> nil then
-  begin
-    _jBoolean := JNI_False;
-    pasURL    := String( env^.GetStringUTFChars(Env,URL,@_jBoolean) );
+  try
+    Result     := cjWebView_Act_Continue;
+    pasWebView := jWebView(webview);
+    if not Assigned(pasWebView) then Exit;
+    if not Assigned(pasWebView.OnStatus) then Exit;
+    //
+    pasURL := '';
+    if URL <> nil then
+    begin
+      _jBoolean := JNI_False;
+      pasURL    := String( env^.GetStringUTFChars(Env,URL,@_jBoolean) );
+    end;
+    //
+    pasCanNavi := True;
+    pasWebView.OnStatus(pasWebView,IntToWebViewStatus(EventType),pasURL,pasCanNavi);
+    if not(pasCanNavi) then Result := cjWebView_Act_Break;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
-  //
-  pasCanNavi := True;
-  pasWebView.OnStatus(pasWebView,IntToWebViewStatus(EventType),pasURL,pasCanNavi);
-  if not(pasCanNavi) then Result := cjWebView_Act_Break;
-
 end;
 
 {
@@ -3464,16 +3790,22 @@ begin
   doing:= True;  //doing!
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-
-  if not Assigned(Obj) then Exit;
-  if Obj is jAsyncTask then
-  begin
-     jAsyncTask(Obj).AsyncTaskState:= atsInBackground;
-     jAsyncTask(Obj).UpdateJNI(gApp);
-     jForm(jAsyncTask(Obj).Owner).UpdateJNI(gApp);
-     jAsyncTask(Obj).GenEvent_OnAsyncEventDoInBackground(Obj, Progress, doing);
-     Result:=  JBool(doing);
-  end
+  try
+    if not Assigned(Obj) then Exit;
+    if Obj is jAsyncTask then
+    begin
+       jAsyncTask(Obj).AsyncTaskState:= atsInBackground;
+       jAsyncTask(Obj).UpdateJNI(gApp);
+       jForm(jAsyncTask(Obj).Owner).UpdateJNI(gApp);
+       jAsyncTask(Obj).GenEvent_OnAsyncEventDoInBackground(Obj, Progress, doing);
+       Result:=  JBool(doing);
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
+  end;
 end;
 
 function Java_Event_pOnAsyncEventProgressUpdate(env: PJNIEnv; this: jobject; Obj : TObject; Progress : integer): JInt;
@@ -3483,15 +3815,22 @@ begin
   progressUpdate:= Progress + 1;
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if not Assigned(Obj) then Exit;
-  if Obj is jAsyncTask then
-  begin
-     jAsyncTask(Obj).AsyncTaskState:= atsProgress;
-     jAsyncTask(Obj).UpdateJNI(gApp);
-     jForm(jAsyncTask(Obj).Owner).UpdateJNI(gApp);
-     jAsyncTask(Obj).GenEvent_OnAsyncEventProgressUpdate(Obj, Progress, progressUpdate);
-     Result:=  progressUpdate;
-  end
+  try
+    if not Assigned(Obj) then Exit;
+    if Obj is jAsyncTask then
+    begin
+       jAsyncTask(Obj).AsyncTaskState:= atsProgress;
+       jAsyncTask(Obj).UpdateJNI(gApp);
+       jForm(jAsyncTask(Obj).Owner).UpdateJNI(gApp);
+       jAsyncTask(Obj).GenEvent_OnAsyncEventProgressUpdate(Obj, Progress, progressUpdate);
+       Result:=  progressUpdate;
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
+  end;
 end;
 
 function Java_Event_pOnAsyncEventPreExecute(env: PJNIEnv; this: jobject; Obj: TObject): JInt;
@@ -3501,29 +3840,43 @@ begin
   startProgress:= 0;
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if not Assigned(Obj) then Exit;
-  if Obj is jAsyncTask then
-  begin
-     jAsyncTask(Obj).AsyncTaskState:= atsBefore;
-     jAsyncTask(Obj).UpdateJNI(gApp);
-     jForm(jAsyncTask(Obj).Owner).UpdateJNI(gApp);
-     jAsyncTask(Obj).GenEvent_OnAsyncEventPreExecute(Obj, startProgress);
-     Result:= startProgress;
-  end
+  try
+    if not Assigned(Obj) then Exit;
+    if Obj is jAsyncTask then
+    begin
+       jAsyncTask(Obj).AsyncTaskState:= atsBefore;
+       jAsyncTask(Obj).UpdateJNI(gApp);
+       jForm(jAsyncTask(Obj).Owner).UpdateJNI(gApp);
+       jAsyncTask(Obj).GenEvent_OnAsyncEventPreExecute(Obj, startProgress);
+       Result:= startProgress;
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
+  end;
 end;
 
 procedure Java_Event_pOnAsyncEventPostExecute(env: PJNIEnv; this: jobject; Obj: TObject; Progress: integer);
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if not Assigned(Obj) then Exit;
-  if Obj is jAsyncTask then
-  begin
-     jAsyncTask(Obj).AsyncTaskState:= atsPost ;
-     jAsyncTask(Obj).UpdateJNI(gApp);
-     jForm(jAsyncTask(Obj).Owner).UpdateJNI(gApp);
-     jAsyncTask(Obj).GenEvent_OnAsyncEventPostExecute(Obj, Progress);
-  end
+  try
+    if not Assigned(Obj) then Exit;
+    if Obj is jAsyncTask then
+    begin
+       jAsyncTask(Obj).AsyncTaskState:= atsPost ;
+       jAsyncTask(Obj).UpdateJNI(gApp);
+       jForm(jAsyncTask(Obj).Owner).UpdateJNI(gApp);
+       jAsyncTask(Obj).GenEvent_OnAsyncEventPostExecute(Obj, Progress);
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
+  end;
 end;
 
 procedure Java_Event_pOnHttpClientContentResult(env: PJNIEnv; this: jobject; Obj: TObject; content: jString);
@@ -3534,18 +3887,25 @@ begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
   //
-  if not Assigned(Obj) then Exit;
+  try
+    if not Assigned(Obj) then Exit;
 
-  if Obj is jHttpClient then
-  begin
-    pascontent := '';
-    if content <> nil then
+    if Obj is jHttpClient then
     begin
-      _jBoolean := JNI_False;
-      pascontent    := String( env^.GetStringUTFChars(Env,content,@_jBoolean) );
+      pascontent := '';
+      if content <> nil then
+      begin
+        _jBoolean := JNI_False;
+        pascontent    := String( env^.GetStringUTFChars(Env,content,@_jBoolean) );
+      end;
+      jForm(jHttpClient(Obj).Owner).UpdateJNI(gApp);
+      jHttpClient(Obj).GenEvent_OnHttpClientContentResult(Obj, pascontent);
     end;
-    jForm(jHttpClient(Obj).Owner).UpdateJNI(gApp);
-    jHttpClient(Obj).GenEvent_OnHttpClientContentResult(Obj, pascontent);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 
 end;
@@ -3554,12 +3914,19 @@ procedure Java_Event_pOnHttpClientUploadProgress(env: PJNIEnv; this: jobject; Ob
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if not Assigned(Obj) then Exit;
-  if Obj is jHttpClient then
-  begin
-     jHttpClient(Obj).UpdateJNI(gApp);
-     jHttpClient(Obj).GenEvent_OnHttpClientUploadProgress(Obj, progress);
-  end
+  try
+    if not Assigned(Obj) then Exit;
+    if Obj is jHttpClient then
+    begin
+       jHttpClient(Obj).UpdateJNI(gApp);
+       jHttpClient(Obj).GenEvent_OnHttpClientUploadProgress(Obj, progress);
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
+  end;
 end;
 
 procedure Java_Event_pOnHttpClientUploadFinished(env: PJNIEnv; this: jobject; Obj: TObject;
@@ -3572,24 +3939,31 @@ begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
   //
-  if not Assigned(Obj) then Exit;
+  try
+    if not Assigned(Obj) then Exit;
 
-  if Obj is jHttpClient then
-  begin
-    pasfullFileName := '';
-    pasResponse:= '';
-    if fullFileName <> nil then
+    if Obj is jHttpClient then
     begin
-      _jBoolean := JNI_False;
-      pasfullFileName:= String( env^.GetStringUTFChars(Env,fullFileName,@_jBoolean) );
+      pasfullFileName := '';
+      pasResponse:= '';
+      if fullFileName <> nil then
+      begin
+        _jBoolean := JNI_False;
+        pasfullFileName:= String( env^.GetStringUTFChars(Env,fullFileName,@_jBoolean) );
+      end;
+      if response <> nil then
+      begin
+        _jBoolean := JNI_False;
+        pasResponse:= String(env^.GetStringUTFChars(Env,response,@_jBoolean) );
+      end;
+      jForm(jHttpClient(Obj).Owner).UpdateJNI(gApp);
+      jHttpClient(Obj).GenEvent_OnHttpClientUploadFinished(Obj, code, pasResponse, pasfullFileName);
     end;
-    if response <> nil then
+  except
+    on e: exception do
     begin
-      _jBoolean := JNI_False;
-      pasResponse:= String(env^.GetStringUTFChars(Env,response,@_jBoolean) );
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
     end;
-    jForm(jHttpClient(Obj).Owner).UpdateJNI(gApp);
-    jHttpClient(Obj).GenEvent_OnHttpClientUploadFinished(Obj, code, pasResponse, pasfullFileName);
   end;
 end;
 
@@ -3601,42 +3975,49 @@ begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
   //
-  if not Assigned(Obj) then Exit;
+  try
+    if not Assigned(Obj) then Exit;
 
-  if Obj is jEditText then
-  begin
-    pascontent := '';
-    if content <> nil then
+    if Obj is jEditText then
     begin
-      _jBoolean := JNI_False;
-      pascontent    := String( env^.GetStringUTFChars(Env,content,@_jBoolean) );
+      pascontent := '';
+      if content <> nil then
+      begin
+        _jBoolean := JNI_False;
+        pascontent    := String( env^.GetStringUTFChars(Env,content,@_jBoolean) );
+      end;
+      jForm(jEditText(Obj).Owner).UpdateJNI(gApp);
+      jEditText(Obj).GenEvent_OnOnLostFocus(Obj, pascontent);
     end;
-    jForm(jEditText(Obj).Owner).UpdateJNI(gApp);
-    jEditText(Obj).GenEvent_OnOnLostFocus(Obj, pascontent);
-  end;
 
-  if Obj is jComboEditText then
-  begin
-    pascontent := '';
-    if content <> nil then
+    if Obj is jComboEditText then
     begin
-      _jBoolean := JNI_False;
-      pascontent    := String( env^.GetStringUTFChars(Env,content,@_jBoolean) );
+      pascontent := '';
+      if content <> nil then
+      begin
+        _jBoolean := JNI_False;
+        pascontent    := String( env^.GetStringUTFChars(Env,content,@_jBoolean) );
+      end;
+      jForm(jComboEditText(Obj).Owner).UpdateJNI(gApp);
+      jComboEditText(Obj).GenEvent_OnOnLostFocus(Obj, pascontent);
     end;
-    jForm(jComboEditText(Obj).Owner).UpdateJNI(gApp);
-    jComboEditText(Obj).GenEvent_OnOnLostFocus(Obj, pascontent);
-  end;
 
-  if Obj is jAutoTextView then
-  begin
-    pascontent := '';
-    if content <> nil then
+    if Obj is jAutoTextView then
     begin
-      _jBoolean := JNI_False;
-      pascontent    := String( env^.GetStringUTFChars(Env,content,@_jBoolean) );
+      pascontent := '';
+      if content <> nil then
+      begin
+        _jBoolean := JNI_False;
+        pascontent    := String( env^.GetStringUTFChars(Env,content,@_jBoolean) );
+      end;
+      jForm(jAutoTextView(Obj).Owner).UpdateJNI(gApp);
+      jAutoTextView(Obj).GenEvent_OnOnLostFocus(Obj, pascontent);
     end;
-    jForm(jAutoTextView(Obj).Owner).UpdateJNI(gApp);
-    jAutoTextView(Obj).GenEvent_OnOnLostFocus(Obj, pascontent);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -3645,11 +4026,18 @@ begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
   //
-  if not Assigned(Obj) then Exit;
-  if Obj is jHttpClient then
-  begin
-    jForm(jHttpClient(Obj).Owner).UpdateJNI(gApp);
-    jHttpClient(Obj).GenEvent_OnHttpClientCodeResult(Obj, code);
+  try
+    if not Assigned(Obj) then Exit;
+    if Obj is jHttpClient then
+    begin
+      jForm(jHttpClient(Obj).Owner).UpdateJNI(gApp);
+      jHttpClient(Obj).GenEvent_OnHttpClientCodeResult(Obj, code);
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -3661,10 +4049,17 @@ procedure Java_Event_pOnScrollViewChanged(env: PJNIEnv; this: jobject; Obj: TObj
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if Obj is jScrollView then
-  begin
-    jForm(jScrollView(Obj).Owner).UpdateJNI(gApp);
-    jScrollView(Obj).GenEvent_OnChanged(Obj, currenthorizontal, currentVertical, previousHorizontal, previousVertical, onPosition, scrolldiff);
+  try
+    if Obj is jScrollView then
+    begin
+      jForm(jScrollView(Obj).Owner).UpdateJNI(gApp);
+      jScrollView(Obj).GenEvent_OnChanged(Obj, currenthorizontal, currentVertical, previousHorizontal, previousVertical, onPosition, scrolldiff);
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -3676,10 +4071,17 @@ procedure Java_Event_pOnHorScrollViewChanged(env: PJNIEnv; this: jobject; Obj: T
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if Obj is jHorizontalScrollView then
-  begin
-    jForm(jHorizontalScrollView(Obj).Owner).UpdateJNI(gApp);
-    jHorizontalScrollView(Obj).GenEvent_OnChanged(Obj, currenthorizontal, currentVertical, previousHorizontal, previousVertical, onPosition, scrolldiff);
+  try
+    if Obj is jHorizontalScrollView then
+    begin
+      jForm(jHorizontalScrollView(Obj).Owner).UpdateJNI(gApp);
+      jHorizontalScrollView(Obj).GenEvent_OnChanged(Obj, currenthorizontal, currentVertical, previousHorizontal, previousVertical, onPosition, scrolldiff);
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -3687,10 +4089,17 @@ procedure Java_Event_pOnSqliteDataAccessAsyncPostExecute(env:PJNIEnv;this:JObjec
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if Sender is jSqliteDataAccess then
-  begin
-    jForm(jSqliteDataAccess(Sender).Owner).UpdateJNI(gApp);
-    jSqliteDataAccess(Sender).GenEvent_OnSqliteDataAccessAsyncPostExecute(Sender,count,GetPString(env,msgResult));
+  try
+    if Sender is jSqliteDataAccess then
+    begin
+      jForm(jSqliteDataAccess(Sender).Owner).UpdateJNI(gApp);
+      jSqliteDataAccess(Sender).GenEvent_OnSqliteDataAccessAsyncPostExecute(Sender,count,GetPString(env,msgResult));
+    end;
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -10991,7 +11400,18 @@ end;
 procedure jAsyncTask.GenEvent_OnAsyncEventDoInBackground(Obj: TObject; progress: integer; out keepInBackground: boolean);
 begin
   keepInBackground:= True;
-  if Assigned(FOnDoInBackground) then FOnDoInBackground(Obj,progress,keepInBackground);
+  fExceptStr := '';
+  try
+    if Assigned(FOnDoInBackground) then
+      FOnDoInBackground(Obj,progress,keepInBackground);
+    keepInBackground := False;
+  except
+    on e: exception do
+    begin
+      keepInBackground := False;
+      fExceptStr := e.Message;
+    end;
+  end;
 end;
 
 procedure jAsyncTask.GenEvent_OnAsyncEventProgressUpdate(Obj: TObject; progress: integer; out progressUpdate: integer);
@@ -11008,6 +11428,8 @@ end;
 
 procedure jAsyncTask.GenEvent_OnAsyncEventPostExecute(Obj: TObject; progress: Integer);
 begin
+  if fExceptStr <> '' then
+    gApp.ShowMessage('ASyncTask Exception Error', fExceptStr, 'OK');
   if Assigned(FOnPostExecute) then FOnPostExecute(Obj,progress);
 end;
 
@@ -12690,16 +13112,23 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if Obj is jDBListView then
-  begin
-    jForm(jDBListView(Obj).Owner).UpdateJNI(gApp);
-    pascaption := '';
-    if caption <> nil then
+  try
+    if Obj is jDBListView then
     begin
-      _jBoolean:= JNI_False;
-      pascaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      jForm(jDBListView(Obj).Owner).UpdateJNI(gApp);
+      pascaption := '';
+      if caption <> nil then
+      begin
+        _jBoolean:= JNI_False;
+        pascaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      end;
+      jDBListView(Obj).GenEvent_OnClickDBListItem(Obj, position, pascaption);
     end;
-    jDBListView(Obj).GenEvent_OnClickDBListItem(Obj, position, pascaption);
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
   end;
 end;
 
@@ -12710,17 +13139,24 @@ var
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
-  if Obj is jDBListView then
-  begin
-    jForm(jDBListView(Obj).Owner).UpdateJNI(gApp);
-    pascaption := '';
-    if caption <> nil then
+  try
+    if Obj is jDBListView then
     begin
-      _jBoolean:= JNI_False;
-      pascaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      jForm(jDBListView(Obj).Owner).UpdateJNI(gApp);
+      pascaption := '';
+      if caption <> nil then
+      begin
+        _jBoolean:= JNI_False;
+        pascaption:= string( env^.GetStringUTFChars(env,caption,@_jBoolean) );
+      end;
+      jDBListView(Obj).GenEvent_OnLongClickDBListItem(Obj, position,  pascaption);
     end;
-    jDBListView(Obj).GenEvent_OnLongClickDBListItem(Obj, position,  pascaption);
-  end
+  except
+    on e: exception do
+    begin
+      gApp.ShowMessage('OnClick Exception Error!', e.Message, 'OK');
+    end;
+  end;
 end;
 
 end.

@@ -1,1 +1,1 @@
-/adt32/sdk/platform-tools/adb uninstall org.lamw.appcompatnavigationdrawerdemo1
+/Lazarus/lamw-data/android-sdk-windows/platform-tools/adb uninstall org.lamw.appcompatnavigationdrawerdemo1

@@ -273,8 +273,11 @@ public class jBluetooth /*extends ...*/ {
        if (IsReachablePairedDevice(_deviceAddress))	
           return mBA.getRemoteDevice(_deviceAddress);
        else
-    	  return null; 
-       
+    	  return null;
+    }
+
+    public BluetoothDevice GetRemoteDevice(String _deviceAddress){
+       return GetRemoteDeviceByAddress(_deviceAddress);
     }
     
     public String GetDeviceNameByAddress(String _deviceAddress){
